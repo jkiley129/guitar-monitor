@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Settings — Guitar Monitor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
+
+    <div class="card bg-dark border-secondary mb-4">
+      <div class="card-header border-secondary">
+        <h5 class="mb-0"><i class="bi bi-telegram text-info"></i> Telegram Notifications</h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <input type="hidden" name="action" value="save">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Bot Token</label>
+            <input type="password" name="telegram_token" class="form-control bg-dark text-light border-secondary"
+                   value="{{ settings.telegram_token }}" placeholder="123456:ABC-DEF...">
+            <div class="form-text">
+              Create a bot via <a href="https://t.me/BotFather" target="_blank" class="text-info">@BotFather</a> on Telegram.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Chat ID</label>
+            <input type="text" name="telegram_chat_id" class="form-control bg-dark text-light border-secondary"
+                   value="{{ settings.telegram_chat_id }}" placeholder="Your numeric chat ID">
+            <div class="form-text">
+              Message <a href="https://t.me/userinfobot" target="_blank" class="text-info">@userinfobot</a> to find your chat ID.
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Poll Interval (minutes)</label>
+            <input type="number" name="poll_interval_minutes" class="form-control bg-dark text-light border-secondary"
+                   value="{{ settings.poll_interval_minutes }}" min="5" max="1440">
+            <div class="form-text">How often to check Craigslist. Minimum 5 minutes recommended.</div>
+          </div>
+
+          <button type="submit" class="btn btn-warning">
+            <i class="bi bi-check-lg"></i> Save Settings
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Actions</h5>
+      </div>
+      <div class="card-body d-flex gap-3 flex-wrap">
+        <form method="post">
+          <input type="hidden" name="action" value="test_telegram">
+          <button type="submit" class="btn btn-outline-info">
+            <i class="bi bi-send"></i> Test Telegram
+          </button>
+        </form>
+        <form method="post">
+          <input type="hidden" name="action" value="poll_now">
+          <button type="submit" class="btn btn-outline-warning">
+            <i class="bi bi-arrow-clockwise"></i> Poll Now
+          </button>
+        </form>
+      </div>
+      <div class="card-footer border-secondary text-muted small">
+        <i class="bi bi-info-circle"></i>
+        "Poll Now" runs a full scan across all active searches immediately. Results appear on the Matches page.
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

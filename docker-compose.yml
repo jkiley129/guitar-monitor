@@ -1,0 +1,16 @@
+services:
+  guitar-monitor:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - guitar_data:/data
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - SECRET_KEY=${SECRET_KEY}
+
+volumes:
+  guitar_data:
+    driver: local
