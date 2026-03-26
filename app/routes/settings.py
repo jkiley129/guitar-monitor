@@ -11,8 +11,7 @@ def index():
         action = request.form.get("action")
 
         if action == "save":
-            set_setting("telegram_token", request.form.get("telegram_token", "").strip())
-            set_setting("telegram_chat_id", request.form.get("telegram_chat_id", "").strip())
+            set_setting("ntfy_topic", request.form.get("ntfy_topic", "").strip())
             new_interval = request.form.get("poll_interval_minutes", "20").strip()
             set_setting("poll_interval_minutes", new_interval)
 
@@ -25,24 +24,34 @@ def index():
             flash("Settings saved.", "success")
             return redirect(url_for("settings.index"))
 
-        elif action == "test_telegram":
-            from app.notifier import send_test_message
-            ok, msg = send_test_message()
+        elif action == "test_notify":
+            from app.notifier import send_test_notification
+            ok, msg = send_test_notification()
             flash(msg, "success" if ok else "danger")
             return redirect(url_for("settings.index"))
 
         elif action == "poll_now":
             from app.scheduler import trigger_now
             try:
-                trigger_now(current_app._get_current_object())
-                flash("Poll complete — check the Matches page for new results.", "success")
+                results, sent = trigger_now(current_app._get_current_object())
+                total = sum(results.values())
+                if total == 0:
+                    msg = "Scan complete — no new listings found this time."
+                else:
+                    parts = [f"{count} from \"{name}\"" for name, count in results.items() if count > 0]
+                    msg = f"Found {total} new listing{'s' if total != 1 else ''}! ({', '.join(parts)})"
+                    if sent:
+                        msg += f" — {sent} notification{'s' if sent != 1 else ''} sent."
+                flash(msg, "success" if total == 0 else "warning")
             except Exception as e:
-                flash(f"Poll failed: {e}", "danger")
+                flash(f"Scan failed: {e}", "danger")
             return redirect(url_for("settings.index"))
 
     settings = {
-        "telegram_token": get_setting("telegram_token", ""),
-        "telegram_chat_id": get_setting("telegram_chat_id", ""),
+        "ntfy_topic": get_setting("ntfy_topic", ""),
         "poll_interval_minutes": get_setting("poll_interval_minutes", "20"),
     }
-    return render_template("settings/index.html", settings=settings)
+    from app.models import Search
+    configured = bool(settings["ntfy_topic"])
+    searches_exist = Search.query.count() > 0
+    return render_template("settings/index.html", settings=settings, configured=configured, searches_exist=searches_exist)

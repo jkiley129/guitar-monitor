@@ -3,70 +3,163 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-lg-6">
-    <h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
+  <div class="col-lg-7">
+    <h2 class="mb-1"><i class="bi bi-gear"></i> Settings</h2>
+    <p class="text-muted mb-4">Configure notifications and polling.</p>
 
-    <div class="card bg-dark border-secondary mb-4">
-      <div class="card-header border-secondary">
-        <h5 class="mb-0"><i class="bi bi-telegram text-info"></i> Telegram Notifications</h5>
-      </div>
-      <div class="card-body">
-        <form method="post">
-          <input type="hidden" name="action" value="save">
+    <!-- Step 1: Notifications -->
+    <div class="card border-0 mb-4 setup-card {{ 'setup-done' if configured else 'setup-active' }}">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="step-badge me-3 {{ 'step-done' if configured else 'step-active' }}">
+            {% if configured %}
+              <i class="bi bi-check-lg"></i>
+            {% else %}
+              1
+            {% endif %}
+          </div>
+          <div>
+            <h5 class="mb-0">Set up notifications</h5>
+            <small class="text-muted">Get push alerts on your phone — free, no account needed</small>
+          </div>
+          {% if configured %}
+            <span class="badge bg-success ms-auto">Connected</span>
+          {% endif %}
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Bot Token</label>
-            <input type="password" name="telegram_token" class="form-control bg-dark text-light border-secondary"
-                   value="{{ settings.telegram_token }}" placeholder="123456:ABC-DEF...">
-            <div class="form-text">
-              Create a bot via <a href="https://t.me/BotFather" target="_blank" class="text-info">@BotFather</a> on Telegram.
+        <!-- What you'll receive preview -->
+        <div class="notification-preview mb-4">
+          <div class="preview-header">
+            <span class="preview-app-icon">🔔</span>
+            <span class="preview-app-name">ntfy</span>
+            <span class="preview-time text-muted">now</span>
+          </div>
+          <div class="preview-body">
+            <div class="preview-title">Fender Telecaster 1972 — $650</div>
+            <div class="preview-text">San Francisco Bay  |  Search: Vintage Telecaster</div>
+            <div class="preview-link"><i class="bi bi-box-arrow-up-right"></i> View on Craigslist →</div>
+          </div>
+        </div>
+
+        <!-- Setup steps -->
+        <div class="setup-steps mb-4">
+          <div class="setup-step">
+            <div class="setup-step-num">1</div>
+            <div>
+              <strong>Download the ntfy app</strong>
+              <div class="d-flex gap-2 mt-1 flex-wrap">
+                <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-apple"></i> App Store
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-google-play"></i> Google Play
+                </a>
+                <a href="https://ntfy.sh" target="_blank" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-globe"></i> Use in browser
+                </a>
+              </div>
             </div>
           </div>
+          <div class="setup-step">
+            <div class="setup-step-num">2</div>
+            <div>
+              <strong>Pick a unique topic name</strong>
+              <p class="text-muted small mb-1">This is like a private channel — make it hard to guess so only you get your alerts. Something like <code>guitars-jk-2024</code>.</p>
+            </div>
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">3</div>
+            <div>
+              <strong>In the ntfy app, subscribe to your topic</strong>
+              <p class="text-muted small mb-1">Tap <strong>+</strong> and enter your topic name. Then enter the same name below.</p>
+            </div>
+          </div>
+        </div>
 
+        <form method="post">
+          <input type="hidden" name="action" value="save">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Chat ID</label>
-            <input type="text" name="telegram_chat_id" class="form-control bg-dark text-light border-secondary"
-                   value="{{ settings.telegram_chat_id }}" placeholder="Your numeric chat ID">
-            <div class="form-text">
-              Message <a href="https://t.me/userinfobot" target="_blank" class="text-info">@userinfobot</a> to find your chat ID.
+            <label class="form-label fw-semibold">Your ntfy topic name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-dark border-secondary text-muted">ntfy.sh/</span>
+              <input type="text" name="ntfy_topic" class="form-control"
+                     placeholder="guitars-jk-2024"
+                     value="{{ settings.ntfy_topic }}"
+                     autocomplete="off" spellcheck="false">
             </div>
           </div>
 
           <div class="mb-4">
-            <label class="form-label fw-semibold">Poll Interval (minutes)</label>
-            <input type="number" name="poll_interval_minutes" class="form-control bg-dark text-light border-secondary"
-                   value="{{ settings.poll_interval_minutes }}" min="5" max="1440">
-            <div class="form-text">How often to check Craigslist. Minimum 5 minutes recommended.</div>
+            <label class="form-label fw-semibold">Check Craigslist every</label>
+            <div class="input-group" style="max-width: 200px">
+              <input type="number" name="poll_interval_minutes" class="form-control"
+                     value="{{ settings.poll_interval_minutes }}" min="5" max="1440">
+              <span class="input-group-text bg-dark border-secondary text-muted">minutes</span>
+            </div>
+            <div class="form-text">Minimum 5 min recommended to avoid rate limiting.</div>
           </div>
 
-          <button type="submit" class="btn btn-warning">
-            <i class="bi bi-check-lg"></i> Save Settings
-          </button>
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            <button type="submit" class="btn btn-warning">
+              <i class="bi bi-check-lg"></i> Save
+            </button>
+          </div>
         </form>
+
+        {% if settings.ntfy_topic %}
+        <div class="d-flex gap-2 flex-wrap align-items-center mt-3">
+          <form method="post">
+            <input type="hidden" name="action" value="test_notify">
+            <button type="submit" class="btn btn-outline-info">
+              <i class="bi bi-send"></i> Send test notification
+            </button>
+          </form>
+          <a href="https://ntfy.sh/{{ settings.ntfy_topic }}" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-box-arrow-up-right"></i> View topic in browser
+          </a>
+        </div>
+        {% endif %}
       </div>
     </div>
 
-    <div class="card bg-dark border-secondary">
-      <div class="card-header border-secondary">
-        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Actions</h5>
+    <!-- Step 2: Create a search -->
+    <div class="card border-0 mb-4 setup-card {{ 'setup-done' if searches_exist else '' }}">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center">
+          <div class="step-badge me-3 {{ 'step-done' if searches_exist else '' }}">
+            {% if searches_exist %}
+              <i class="bi bi-check-lg"></i>
+            {% else %}
+              2
+            {% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <h5 class="mb-0">Create a search</h5>
+            <small class="text-muted">Tell Guitar Monitor what to look for</small>
+          </div>
+          <a href="{{ url_for('searches.new') }}" class="btn btn-sm {{ 'btn-outline-secondary' if searches_exist else 'btn-warning' }}">
+            {{ 'Manage searches' if searches_exist else 'Create search →' }}
+          </a>
+        </div>
       </div>
-      <div class="card-body d-flex gap-3 flex-wrap">
-        <form method="post">
-          <input type="hidden" name="action" value="test_telegram">
-          <button type="submit" class="btn btn-outline-info">
-            <i class="bi bi-send"></i> Test Telegram
-          </button>
-        </form>
-        <form method="post">
-          <input type="hidden" name="action" value="poll_now">
-          <button type="submit" class="btn btn-outline-warning">
-            <i class="bi bi-arrow-clockwise"></i> Poll Now
-          </button>
-        </form>
-      </div>
-      <div class="card-footer border-secondary text-muted small">
-        <i class="bi bi-info-circle"></i>
-        "Poll Now" runs a full scan across all active searches immediately. Results appear on the Matches page.
+    </div>
+
+    <!-- Step 3: Poll now -->
+    <div class="card border-0 mb-4 setup-card">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center">
+          <div class="step-badge me-3">3</div>
+          <div class="flex-grow-1">
+            <h5 class="mb-0">Run your first scan</h5>
+            <small class="text-muted">Check Craigslist right now instead of waiting for the timer</small>
+          </div>
+          <form method="post">
+            <input type="hidden" name="action" value="poll_now">
+            <button type="submit" class="btn btn-sm btn-outline-warning">
+              <i class="bi bi-arrow-clockwise"></i> Scan now
+            </button>
+          </form>
+        </div>
       </div>
     </div>
 

@@ -12,7 +12,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.environ.get('DB_PATH', '/data/guitar.db')}"
+    default_db = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "guitar.db")
+    os.makedirs(os.path.dirname(default_db), exist_ok=True)
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.environ.get('DB_PATH', default_db)}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     from app.database import init_db

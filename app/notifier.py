@@ -1,61 +1,76 @@
 import logging
-
-import telegram
+import requests
 
 from app.database import db, get_setting
 from app.models import Match
+from app.poller import CITY_LABELS
 
 logger = logging.getLogger(__name__)
 
-
-def _get_bot_and_chat():
-    token = get_setting("telegram_token")
-    chat_id = get_setting("telegram_chat_id")
-    if not token or not chat_id:
-        return None, None
-    return telegram.Bot(token=token), chat_id
+NTFY_BASE = "https://ntfy.sh"
 
 
-def format_message(match):
-    price_str = f"${match.price:,}" if match.price else "No price listed"
-    city_label = match.city.replace("_", " ").title()
-    return (
-        f"<b>{match.title}</b>\n"
-        f"{price_str} — {city_label}\n"
-        f"<a href=\"{match.url}\">View on Craigslist</a>\n"
-        f"<i>Search: {match.search.name}</i>"
-    )
+def _ntfy_topic():
+    return get_setting("ntfy_topic", "").strip()
 
 
 def send_pending_notifications():
-    bot, chat_id = _get_bot_and_chat()
-    if not bot:
-        logger.debug("Telegram not configured, skipping notifications")
+    topic = _ntfy_topic()
+    if not topic:
+        logger.debug("ntfy topic not configured, skipping notifications")
         return 0
 
     unsent = Match.query.filter_by(notified=0).all()
     sent = 0
     for match in unsent:
-        text = format_message(match)
         try:
-            if match.image_url:
-                bot.send_photo(chat_id=chat_id, photo=match.image_url, caption=text, parse_mode="HTML")
-            else:
-                bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            _send_ntfy(topic, match)
             match.notified = 1
             db.session.commit()
             sent += 1
         except Exception as e:
-            logger.warning(f"Telegram send failed for match {match.id}: {e}")
+            logger.warning(f"ntfy send failed for match {match.id}: {e}")
     return sent
 
 
-def send_test_message():
-    bot, chat_id = _get_bot_and_chat()
-    if not bot:
-        return False, "Telegram not configured. Set token and chat ID in Settings."
+def _send_ntfy(topic, match):
+    price_str = f"${match.price:,}" if match.price else "No price listed"
+    city_label = CITY_LABELS.get(match.city, match.city)
+
+    safe_title = match.title.encode("latin-1", errors="replace").decode("latin-1")
+    safe_url = match.url.encode("latin-1", errors="replace").decode("latin-1")
+    headers = {
+        "Title": f"{safe_title} - {price_str}",
+        "Tags": "guitar,money_with_wings",
+        "Click": safe_url,
+        "Actions": f"view, View on Craigslist, {safe_url}",
+        "Priority": "default",
+    }
+
+    body = f"{city_label}  |  Search: {match.search.name}"
+
+    resp = requests.post(f"{NTFY_BASE}/{topic}", data=body.encode("utf-8"), headers=headers, timeout=10)
+    resp.raise_for_status()
+
+
+def send_test_notification():
+    topic = _ntfy_topic()
+    if not topic:
+        return False, "No ntfy topic configured. Enter a topic name and save first."
     try:
-        bot.send_message(chat_id=chat_id, text="Guitar Monitor is connected and working!", parse_mode="HTML")
-        return True, "Test message sent successfully."
+        resp = requests.post(
+            f"{NTFY_BASE}/{topic}",
+            data=b"Guitar Monitor is connected! You'll get alerts here when new listings are found.",
+            headers={
+                "Title": "Guitar Monitor - Test",
+                "Tags": "guitar,white_check_mark",
+                "Priority": "default",
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return True, f"Sent! Check your ntfy app — topic: {topic}"
+    except requests.HTTPError as e:
+        return False, f"ntfy rejected the request ({e.response.status_code}): {e.response.text}"
     except Exception as e:
-        return False, f"Failed to send: {e}"
+        return False, f"Network error: {e}"

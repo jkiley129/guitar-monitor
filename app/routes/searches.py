@@ -56,6 +56,7 @@ def _save_search(search):
     keywords = request.form.get("keywords", "").strip()
     min_price = request.form.get("min_price") or None
     max_price = request.form.get("max_price") or None
+    posted_today = 1 if request.form.get("posted_today") else 0
     selected_cities = request.form.getlist("cities")
 
     if not name or not keywords:
@@ -74,6 +75,7 @@ def _save_search(search):
 
     search.min_price = int(min_price) if min_price else None
     search.max_price = int(max_price) if max_price else None
+    search.posted_today = posted_today
     search.cities = selected_cities
     db.session.commit()
     flash(f'Search "{search.name}" saved.', "success")

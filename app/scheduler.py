@@ -14,17 +14,22 @@ def run_poll_cycle(app):
         from app.poller import poll_all_searches
         from app.notifier import send_pending_notifications
         try:
-            new_matches = poll_all_searches()
+            results = poll_all_searches()
             sent = send_pending_notifications()
-            logger.info(f"Cycle done — {new_matches} new matches, {sent} notifications sent")
+            total = sum(results.values())
+            logger.info(f"Cycle done — {total} new matches, {sent} notifications sent")
+            return results, sent
         except Exception as e:
             logger.error(f"Poll cycle error: {e}")
+            return {}, 0
 
 
 def start_scheduler(app):
     global _scheduler
-    interval = int(get_setting("poll_interval_minutes") or 20)
-    _scheduler = BackgroundScheduler(daemon=True)
+    with app.app_context():
+        interval = int(get_setting("poll_interval_minutes") or 20)
+    import pytz
+    _scheduler = BackgroundScheduler(daemon=True, timezone=pytz.utc)
     _scheduler.add_job(
         func=lambda: run_poll_cycle(app),
         trigger="interval",
@@ -44,4 +49,4 @@ def reschedule(minutes):
 
 
 def trigger_now(app):
-    run_poll_cycle(app)
+    return run_poll_cycle(app)

@@ -11,6 +11,7 @@ class Search(db.Model):
     min_price = db.Column(db.Integer, nullable=True)
     max_price = db.Column(db.Integer, nullable=True)
     _cities = db.Column("cities", db.Text, nullable=False, default="[]")
+    posted_today = db.Column(db.Integer, nullable=False, default=1)  # 1 = today only
     active = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.Text, nullable=False, server_default=db.func.datetime("now"))
 

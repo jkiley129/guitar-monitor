@@ -41,6 +41,17 @@
             </div>
           </div>
 
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Listing Age</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="posted_today" id="postedToday" value="1"
+                     {{ 'checked' if (search is none or search.posted_today) else '' }}>
+              <label class="form-check-label" for="postedToday">
+                Today only <span class="text-muted small">(recommended — avoids flooding you with old listings)</span>
+              </label>
+            </div>
+          </div>
+
           <div class="mb-4">
             <label class="form-label fw-semibold">Cities to Monitor</label>
             <div class="d-flex gap-2 mb-2">
